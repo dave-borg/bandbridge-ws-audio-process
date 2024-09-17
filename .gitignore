@@ -1,0 +1,9 @@
+# Exclude all mp3 and mp4 files
+*.mp3
+*.m4a
+
+.pytest_cache
+
+target
+
+.DS_Store

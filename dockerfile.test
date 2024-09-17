@@ -1,0 +1,35 @@
+# Use an official Python runtime as a base image
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Install system dependencies for aubio, librosa, and pydub (libsndfile, ffmpeg, gcc, pkg-config)
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libsndfile1 \
+    aubio-tools \
+    gcc \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Cython and numpy first
+RUN pip install cython numpy==1.19.5
+
+# Install Python libraries: librosa, madmom, aubio, flask, pytest, requests
+RUN pip install librosa madmom aubio flask pytest requests
+
+# Copy your Flask app into the container
+COPY bandbridge-audio.py /app/bandbridge-audio.py
+
+# Copy your tests into the container
+COPY tests /app/tests
+
+# Copy your test audio files into the container
+COPY tests/audio/*.mp3 /app/audio/
+
+# Expose the port
+EXPOSE 6000
+
+# Run the Flask app in the background and then run the tests
+CMD ["sh", "-c", "python bandbridge-audio.py & sleep 5 && pytest tests"]
