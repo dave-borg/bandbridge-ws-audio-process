@@ -1,35 +1,48 @@
-# Use an official Python runtime as a base image
+# Use the official Python image from the Docker Hub
 FROM python:3.9-slim
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies for aubio and librosa (libsndfile, ffmpeg, gcc, pkg-config)
+# Install build tools
 RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    libsndfile1 \
-    aubio-tools \
     gcc \
-    pkg-config \
+    g++ \
+    libsndfile1 \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Cython and numpy first
-RUN pip install cython numpy
+# Install Cython first
+RUN pip install --no-cache-dir Cython
 
-# Install Python libraries: librosa, madmom, aubio, flask
-RUN pip install librosa madmom aubio flask pydub
-
-# Copy your Flask app into the container
-COPY bandbridge-audio.py /app/bandbridge-audio.py
+# Install the dependencies
+RUN pip install --no-cache-dir numpy==1.19.5
+RUN pip install --no-cache-dir Flask==2.0.1
+RUN pip install --no-cache-dir librosa==0.9.2
+RUN pip install --no-cache-dir madmom
+RUN pip install --no-cache-dir aubio==0.4.9
+RUN pip install --no-cache-dir pydub==0.25.1
+RUN pip install --no-cache-dir gunicorn==20.1.0
+RUN pip install --no-cache-dir werkzeug==2.0.1
+RUN pip install --no-cache-dir music21
 
 # Copy the patch script into the container
 COPY patch_madmom.py /app/patch_madmom.py
+COPY patch_librosa.py /app/patch_librosa.py
 
-# Run the patch script
+# Run the patch scripts
 RUN python /app/patch_madmom.py
+RUN python /app/patch_librosa.py
 
-# Expose the new port
+# Explicitly copy the Python application files
+COPY bandbridge_audio.py /app/bandbridge_audio.py
+COPY wsgi.py /app/wsgi.py
+
+# Set the PYTHONPATH
+ENV PYTHONPATH=/app
+
+# Expose the port the app runs on
 EXPOSE 6000
 
-# Run the Flask app
-CMD ["python", "bandbridge-audio.py"]
+# Command to run the application
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:6000", "wsgi:app"]

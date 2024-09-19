@@ -1,10 +1,14 @@
 package com.bandbridge.audio;
 
 import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import groovyjarjarantlr.collections.List;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -54,9 +58,31 @@ public class AudioUnitTest {
                 .response();
 
         float tempo = response.jsonPath().getFloat("tempo");
-        String message = String.format("Tempo of %s should be %s", testData.songPath, testData.expectedTempo);
+        String message = String.format("Tempo of %s should be %s", testData.songPath,
+                testData.expectedTempo);
         assertEquals(testData.expectedTempo, tempo, message);
     }
+
+    // @ParameterizedTest
+    // @MethodSource("songProvider")
+    // void testTempoEndpoint2(TestData testData) {
+    // File mp3File = getResourceFile(testData.songPath);
+    // Response response = given()
+    // .multiPart("file", mp3File)
+    // .when()
+    // .post("/madmom/tempo")
+    // .then()
+    // .statusCode(200)
+    // .extract()
+    // .response();
+
+    // List<List<Float>> tempoList = response.jsonPath().getList("tempo",
+    // List.class);
+    // float tempo = tempoList.get(0).get(0);
+    // String message = String.format("Tempo of %s should be %s", testData.songPath,
+    // testData.expectedTempo);
+    // assertEquals(testData.expectedTempo, tempo, message);
+    // }
 
     @ParameterizedTest
     @MethodSource("songProvider")
@@ -73,9 +99,11 @@ public class AudioUnitTest {
 
         String key = response.jsonPath().getString("key");
         String mode = response.jsonPath().getString("mode");
-        String keyMessage = String.format("Key of %s should be %s", testData.songPath, testData.expectedKey);
+        String keyMessage = String.format("Key of %s should be %s",
+                testData.songPath, testData.expectedKey);
         assertEquals(testData.expectedKey, key, keyMessage);
-        String modeMessage = String.format("Mode of %s should be %s", testData.songPath, testData.expectedMode);
+        String modeMessage = String.format("Mode of %s should be %s",
+                testData.songPath, testData.expectedMode);
         assertEquals(testData.expectedMode, mode, modeMessage);
     }
 
@@ -102,5 +130,103 @@ public class AudioUnitTest {
             this.expectedKey = expectedKey;
             this.expectedMode = expectedMode;
         }
+    }
+
+    @Test
+    public void testScaleChordsMajor() {
+        String requestBody = "{\"key\": \"G#\", \"mode\": \"major\"}";
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .when()
+                .post("/scale/chords")
+                .then()
+                .statusCode(200)
+                .extract()
+                .response();
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode());
+        assertNotNull(response.jsonPath().getList("chords"));
+        assertEquals(7, response.jsonPath().getList("chords").size());
+    }
+
+    @Test
+    public void testScaleChordsMinor() {
+        String requestBody = "{\"key\": \"G#\", \"mode\": \"minor\"}";
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .when()
+                .post("/scale/chords")
+                .then()
+                .statusCode(200)
+                .extract()
+                .response();
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode());
+        assertNotNull(response.jsonPath().getList("chords"));
+        assertEquals(7, response.jsonPath().getList("chords").size());
+    }
+
+    @Test
+    public void testScaleChordsMixolydian() {
+        String requestBody = "{\"key\": \"G#\", \"mode\": \"mixolydian\"}";
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .when()
+                .post("/scale/chords")
+                .then()
+                .statusCode(200)
+                .extract()
+                .response();
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode());
+        assertNotNull(response.jsonPath().getList("chords"));
+        assertEquals(7, response.jsonPath().getList("chords").size());
+    }
+
+    @Test
+    public void testScaleChordsMissingKey() {
+        String requestBody = "{\"mode\": \"major\"}";
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .when()
+                .post("/scale/chords")
+                .then()
+                .statusCode(400)
+                .extract()
+                .response();
+
+        assertNotNull(response);
+        assertEquals(400, response.getStatusCode());
+        assertNotNull(response.jsonPath().getString("error"));
+    }
+
+    @Test
+    public void testScaleChordsMissingMode() {
+        String requestBody = "{\"key\": \"G#\"}";
+
+        Response response = given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+                .when()
+                .post("/scale/chords")
+                .then()
+                .statusCode(400)
+                .extract()
+                .response();
+
+        assertNotNull(response);
+        assertEquals(400, response.getStatusCode());
+        assertNotNull(response.jsonPath().getString("error"));
     }
 }

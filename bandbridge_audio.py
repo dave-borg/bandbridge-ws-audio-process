@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from music21 import key as music21_key, scale, pitch
 import librosa
 import numpy as np  # Add this import statement
 import madmom
@@ -10,7 +11,7 @@ from pydub import AudioSegment
 app = Flask(__name__)
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 @app.route('/')
 def home():
@@ -38,6 +39,48 @@ def chroma():
     finally:
         os.remove(file_path)
         app.logger.debug(f"File deleted: {file_path}")
+
+def get_scale_chords(key_str, mode_str):
+    # Create a key object
+    key_obj = music21_key.Key(key_str, mode_str)
+    
+    # Get the scale
+    if mode_str == 'major':
+        scale_obj = scale.MajorScale(key_obj.tonic)
+    elif mode_str == 'minor':
+        scale_obj = scale.MinorScale(key_obj.tonic)
+    elif mode_str == 'mixolydian':
+        scale_obj = scale.MixolydianScale(key_obj.tonic)
+    else:
+        raise ValueError(f"Unsupported mode: {mode_str}")
+    
+    # Generate chords for each degree of the scale
+    chords = []
+    for degree in range(1, 8):
+        chord_obj = scale_obj.getChord(degree=degree, minPitch=pitch.Pitch('C4'))
+        chords.append(chord_obj.pitchedCommonName)
+    
+    return chords
+
+@app.route('/scale/chords', methods=['POST'])
+def scale_chords():
+    data = request.get_json()
+    key_str = data.get('key')
+    mode = data.get('mode')
+    
+    logging.debug(f"Received request with key: {key_str}, mode: {mode}")
+    
+    if not key_str or not mode:
+        logging.error("Key and mode are required but not provided")
+        return jsonify({"error": "Key and mode are required"}), 400
+    
+    try:
+        chords = get_scale_chords(key_str, mode)
+        logging.debug(f"Generated chords: {chords}")
+        return jsonify({"chords": chords})
+    except Exception as e:
+        logging.error(f"Exception occurred: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
 
 # Endpoint to detect beats using madmom
 @app.route('/madmom/beats', methods=['POST'])

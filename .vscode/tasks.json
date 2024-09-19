@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Stop all bandbridgewsaudioprocess Docker Containers",
+            "type": "shell",
+            "command": "docker ps -q --filter ancestor=bandbridgewsaudioprocess | xargs -r docker stop",
+            "problemMatcher": []
+        },
+        {
+            "label": "Rebuild bandbridgewsaudioprocess Docker Container",
+            "type": "shell",
+            "command": "docker build --pull --rm -f \"dockerfile\" -t bandbridgewsaudioprocess:latest \".\"",
+            "problemMatcher": []
+        },
+        {
+            "label": "Start bandbridgewsaudioprocess Docker Container",
+            "type": "shell",
+            "command": "docker run --rm -d -p 6000:6000/tcp bandbridgewsaudioprocess:latest",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run bandbridgewsaudioprocess Java Tests",
+            "type": "shell",
+            "command": "mvn test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Full Build and Test of BandBridgeWSAudioProcess",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Stop all bandbridgewsaudioprocess Docker Containers",
+                "Rebuild bandbridgewsaudioprocess Docker Container",
+                "Start bandbridgewsaudioprocess Docker Container",
+                "Run bandbridgewsaudioprocess Java Tests"
+            ]
+        }
+    ]
+}

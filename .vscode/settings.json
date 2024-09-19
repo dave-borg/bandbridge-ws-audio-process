@@ -6,5 +6,6 @@
     "java.project.sourcePaths": [
         "src/test/java/"
     ],
-    "java.project.referencedLibraries": []
+    "java.project.referencedLibraries": [],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
